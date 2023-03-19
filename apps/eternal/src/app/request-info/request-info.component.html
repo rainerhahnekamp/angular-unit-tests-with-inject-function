@@ -1,0 +1,29 @@
+<h2>Get your brochure and enjoy your holiday</h2>
+<p>
+  Please fill in your address and below and we will send you a brochure with more information.
+</p>
+<div>
+  <form (ngSubmit)="search()" [formGroup]="formGroup">
+    <div class="mt-4">
+      <mat-form-field>
+        <mat-label>Address</mat-label>
+        <input data-testid="ri-address" formControlName="address" matInput />
+        <mat-icon matSuffix>location_on</mat-icon>
+        <mat-hint>Please enter your address</mat-hint>
+      </mat-form-field>
+    </div>
+    <div class="my-4">
+      <button
+        color="primary"
+        data-testid="ri-search"
+        mat-raised-button
+        type="submit"
+        [disabled]="formGroup.invalid"
+        >Send
+      </button>
+    </div>
+  </form>
+  <p data-testid="ri-message" class="h-6" aria-live="assertive" role="status">
+    <span *ngIf="lookupResult$ | async as lookupResult">{{ lookupResult }}</span>
+  </p>
+</div>
