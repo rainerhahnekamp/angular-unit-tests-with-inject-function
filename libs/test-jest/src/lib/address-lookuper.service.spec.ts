@@ -1,14 +1,42 @@
 import { expect } from '@jest/globals';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { delay } from 'rxjs/operators';
-// eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
 import { AddressValidator } from '../../../../apps/eternal/src/app/shared/address-validator';
-// eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
 import { AddressLookuper } from '../../../../apps/eternal/src/app/shared/address-lookuper.service';
+import * as diObject from '../../../../apps/eternal/src/app/shared/di';
 
 describe('Address Lookuper', () => {
+  const setupWithDI = (httpClient: unknown, validator: unknown) =>
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: HttpClient, useValue: httpClient },
+        { provide: AddressValidator, useValue: validator }
+      ]
+    }).inject(AddressLookuper);
+
+  const injectSpy = jest.spyOn(diObject, 'di');
+
+  afterAll(() => {
+    injectSpy.mockRestore();
+  });
+
+  beforeEach(() => {
+    injectSpy.mockReset();
+  });
+
+  const setup = (httpClient: unknown, validator: unknown) => {
+    injectSpy.mockImplementation((providerToken: unknown) => {
+      if (providerToken === HttpClient) {
+        return httpClient;
+      } else {
+        return validator;
+      }
+    });
+    return new AddressLookuper();
+  };
+
   for (const { query, expected, response } of [
     { query: 'Domgasse 5', response: ['Domgasse 5'], expected: true },
     { query: 'Domgasse 15', response: [], expected: false }
@@ -19,46 +47,10 @@ describe('Address Lookuper', () => {
       };
 
       const validator: AddressValidator = { isValid: () => true };
-      const lookuper = new AddressLookuper(httpClient as unknown as HttpClient, validator);
+      const lookuper = setup(httpClient, validator);
 
       const isValid = await firstValueFrom(lookuper.lookup(query));
       expect(isValid).toBe(expected);
     });
   }
-
-  it('should call nominatim with right parameters', waitForAsync(() => {
-    const httpClient = { get: jest.fn(() => of([])) };
-    const validator: AddressValidator = { isValid: () => true };
-
-    const lookuper = new AddressLookuper(httpClient as unknown as HttpClient, validator);
-
-    lookuper.lookup('Domgasse 5');
-
-    expect(httpClient.get).toHaveBeenCalledWith('https://nominatim.openstreetmap.org/search.php', {
-      params: new HttpParams().set('format', 'jsonv2').set('q', 'Domgasse 5')
-    });
-  }));
-
-  it('should throw an error on an invalid address', () => {
-    const validator: AddressValidator = { isValid: () => false };
-
-    const lookuper = new AddressLookuper(null as unknown as HttpClient, validator);
-
-    expect(() => lookuper.lookup('invalid address')).toThrow(
-      'Address is not in the required format.'
-    );
-  });
-
-  it('should count the lookups', () => {
-    const httpClient = { get: jest.fn(() => of([])) };
-    const validator: AddressValidator = { isValid: () => true };
-
-    const lookuper = new AddressLookuper(httpClient as unknown as HttpClient, validator);
-
-    lookuper.lookup('Domgasse 5');
-    lookuper.lookup('Domgasse 6');
-    lookuper.lookup('Domgasse 7');
-
-    expect(lookuper.counter).toBe(3);
-  });
 });

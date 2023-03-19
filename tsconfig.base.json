@@ -15,8 +15,6 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@angular-architects/test-utils-jest": ["libs/test-utils-jest/src/index.ts"],
-      "@angular-architects/test-utils-karma": ["libs/test-utils-karma/src/index.ts"],
       "@eternal/test-jest": ["libs/test-jest/src/index.ts"],
       "@eternal/test-karma": ["libs/test-karma/src/index.ts"]
     }

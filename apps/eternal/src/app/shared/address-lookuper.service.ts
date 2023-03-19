@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable, Optional } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AddressValidator } from './address-validator';
+import { di } from './di';
 
 @Injectable({ providedIn: 'root' })
 export class AddressLookuper {
-  constructor(private httpClient: HttpClient, private addressValidator: AddressValidator) {}
+  httpClient = di(HttpClient);
+  addressValidator = di(AddressValidator);
 
   #counter = 0;
 
