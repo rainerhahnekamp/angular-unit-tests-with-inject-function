@@ -1,0 +1,33 @@
+{
+  "name": "test-utils-karma",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/test-utils-karma/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/test-utils-karma",
+        "main": "libs/test-utils-karma/src/index.ts",
+        "tsConfig": "libs/test-utils-karma/tsconfig.lib.json",
+        "assets": ["libs/test-utils-karma/*.md"]
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/publish.mjs test-utils-karma {args.ver} {args.tag}"
+      },
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/test-utils-karma/**/*.ts"]
+      }
+    }
+  },
+  "tags": []
+}
