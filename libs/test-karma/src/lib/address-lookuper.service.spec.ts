@@ -1,15 +1,23 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { delay } from 'rxjs/operators';
 import { AddressValidator } from '../../../../apps/eternal/src/app/shared/address-validator';
 import { AddressLookuper } from '../../../../apps/eternal/src/app/shared/address-lookuper.service';
-import * as diObject from '../../../../apps/eternal/src/app/shared/di';
-import { mockDi } from '../../../../apps/eternal/src/app/shared/di';
-// import * as angularCore from '@angular/core';
+import { clearMock, mockDi } from '../../../../apps/eternal/src/app/shared/di';
 
 describe('Address Lookuper', () => {
-  // const injectSpy = spyOnProperty(diObject, 'di', 'get');
+  const setupWithDI = (httpClient: unknown, validator: unknown) =>
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: HttpClient, useValue: httpClient },
+        { provide: AddressValidator, useValue: validator }
+      ]
+    }).inject(AddressLookuper);
+
+  beforeEach(() => {
+    clearMock();
+  });
 
   const setup = (httpClient: unknown, validator: unknown) => {
     mockDi(HttpClient, httpClient);
@@ -32,4 +40,42 @@ describe('Address Lookuper', () => {
       expect(isValid).toBe(expected);
     });
   }
+
+  it('should call nominatim with right parameters', waitForAsync(() => {
+    const httpClient = { get: jasmine.createSpy() };
+    httpClient.get.and.returnValue(of([]));
+    const validator: AddressValidator = { isValid: () => true };
+
+    const lookuper = setup(httpClient, validator);
+
+    lookuper.lookup('Domgasse 5');
+
+    expect(httpClient.get).toHaveBeenCalledWith('https://nominatim.openstreetmap.org/search.php', {
+      params: new HttpParams().set('format', 'jsonv2').set('q', 'Domgasse 5')
+    });
+  }));
+
+  it('should throw an error on an invalid address', () => {
+    const validator: AddressValidator = { isValid: () => false };
+
+    const lookuper = setup(null, validator);
+
+    expect(() => lookuper.lookup('invalid address')).toThrowError(
+      'Address is not in the required format.'
+    );
+  });
+
+  it('should count the lookups', () => {
+    const httpClient = { get: jasmine.createSpy() };
+    httpClient.get.and.returnValue(of());
+    const validator: AddressValidator = { isValid: () => true };
+
+    const lookuper = setup(httpClient, validator);
+
+    lookuper.lookup('Domgasse 5');
+    lookuper.lookup('Domgasse 6');
+    lookuper.lookup('Domgasse 7');
+
+    expect(lookuper.counter).toBe(3);
+  });
 });
